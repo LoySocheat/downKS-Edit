@@ -1,7 +1,7 @@
 import os
 import time
 from colorama import Fore, init
-from moviepy.editor import VideoFileClip, AudioFileClip, afx, vfx
+from moviepy.editor import VideoFileClip, AudioFileClip, afx, vfx, CompositeVideoClip, ImageClip
 from rich.console import Console
 
 init(autoreset=True)
@@ -20,6 +20,13 @@ def get_music_list(music_folder):
         return music_files
     else:
         return None
+    
+def add_logo(clip, logo_path, logo_position=('right', 'bottom'), logo_size=(100, 100)):
+    logo = ImageClip(logo_path, transparent=True)
+    logo = logo.resize(width=logo_size[0], height=logo_size[1])
+    logo = logo.set_position(logo_position).set_duration(clip.duration)
+    video_with_logo = CompositeVideoClip([clip, logo])
+    return video_with_logo
 
 def custom_edit_video(input_path, question_color, saturation_factor, r_factor, g_factor, b_factor,
                        question_flip, question_speed, speedf, question_music, music_path,
@@ -61,6 +68,9 @@ def custom_edit_video(input_path, question_color, saturation_factor, r_factor, g
         x_position = (original_width - new_width) / 2
         y_position = (original_height - new_height) / 2
         clip = clip.crop(x_position, y_position, x_position + new_width, y_position + new_height)
+        
+    # if logo_path:
+    #     clip = add_logo(clip, logo_path, logo_position, logo_size)
 
     clip.write_videofile(output_path, verbose=False, logger=None, codec='libx264', audio_codec="aac", preset=xxx)
     clip.close()
@@ -135,9 +145,12 @@ def process_videos(video_folder, output_folder):
 
             # Process files
             for i, file in enumerate(clip_list):
-                music_index = i % len(music_files)  # Loop through music files
-                music_path = os.path.join(music_folder, music_files[music_index])
-
+                if question_music.lower() == "yes":
+                    music_index = i % len(music_files)  # Loop through music files
+                    music_path = os.path.join(music_folder, music_files[music_index])
+                else:
+                    music_path = None
+                    
                 output = f"{dir}/{file[:-4]}_custom_edit_video.mp4"
                 limit = str(f'{file:60.60}')
 
